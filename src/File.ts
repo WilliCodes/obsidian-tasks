@@ -1,4 +1,4 @@
-import { ListItemCache, MetadataCache, TFile, Vault } from 'obsidian';
+import { getAllTags, ListItemCache, MetadataCache, TFile, Vault } from 'obsidian';
 
 import { getSettings } from './Settings';
 import type { Task } from './Task';
@@ -157,3 +157,62 @@ const tryRepetitive = async ({
 
     await vault.modify(file, updatedFileLines.join('\n'));
 };
+
+/**
+ * Reads all tags within in the Task's file.
+ */
+ export const readTagsInFile = ({ task }: { task: Task }): string[] => {
+    if (vault === undefined || metadataCache === undefined) {
+        console.error('Tasks: cannot use File before initializing it.');
+        return [];
+    }
+
+    const file = vault.getAbstractFileByPath(task.path);
+    if (!(file instanceof TFile)) {
+        console.warn(
+            `Tasks: No file found for task ${task.description}.`,
+        );
+        return [];
+    }
+
+    if (file.extension !== 'md') {
+        console.error(
+            'Tasks: Only supporting files with the .md file extension.',
+        );
+        return [];
+    }
+
+    const fileCache = metadataCache.getFileCache(file);
+    if (fileCache == undefined || fileCache === null) {
+        console.warn(
+            `Tasks: No file cache found for file ${file.path}.`,
+        );
+        return [];
+    }
+
+    const tags = getAllTags(fileCache);
+    if (!tags) {
+        return [];
+    } else {
+        const expanded_tags = tags.map((tag: string) => expandSubtags({ tag: tag.toLowerCase() })).reduce((acc, val) => acc.concat(val), []);
+        return expanded_tags;
+    }
+};
+
+/**
+ * Tags with subtags (e.g. `#project/a`) should be split (into `#project` and `#project/a`).
+ * This enables to include/exclude all subtags with a parent tag.
+ */
+const expandSubtags = ({ tag }: { tag: string }): string[] => {
+    let all_tags = [tag];
+    let last_idx = 0;
+    while (true) {
+        const idx = tag.indexOf("/", last_idx+1);
+        if (idx === -1) {
+            break;
+        }
+        all_tags.push(tag.slice(0, idx))
+        last_idx = idx;
+    }
+    return all_tags;
+}

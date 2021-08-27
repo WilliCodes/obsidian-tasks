@@ -206,6 +206,11 @@ The following filters exist:
 - `is recurring`
 - `is not recurring`
 - `path (includes|does not include) <path>`
+- `tags (includes|does not include) #<tag> [,#<tag> ...]`
+    - The file containing the task must include/not include the provided tag.
+    - If multiple tags are provided, only one has to match the condition.
+    - (If all tags should be included/not included, separate them in multiple filters.)
+    - Matches case-insensitive (disregards capitalization).
 - `description (includes|does not include) <string>`
     - Matches case-insensitive (disregards capitalization).
 - `heading (includes|does not include) <string>`
@@ -330,6 +335,14 @@ Show one task that is due on the 5th of May and includes `#prio1` in its descrip
     due on 2021-05-05
     description includes #prio1
     limit to 1 tasks
+    ````
+
+Show all open tasks that are due today from files tagged with `#habit`:
+
+    ```tasks
+    not done
+    due today
+    tags includes #habit
     ````
 
 ### Tips

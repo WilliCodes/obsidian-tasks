@@ -1,6 +1,6 @@
 import chrono from 'chrono-node';
 import { LayoutOptions } from 'LayoutOptions';
-
+import { readTagsInFile } from 'File';
 import { Status, Task } from './Task';
 
 export class Query {
@@ -17,6 +17,7 @@ export class Query {
     private readonly doneRegexp = /^done (before|after|on)? ?(.*)/;
 
     private readonly pathRegexp = /^path (includes|does not include) (.*)/;
+    private readonly tagsRegexp = /^tags (includes|does not include) (.*)/;
     private readonly descriptionRegexp =
         /^description (includes|does not include) (.*)/;
     private readonly headingRegexp =
@@ -73,6 +74,9 @@ export class Query {
                         break;
                     case this.pathRegexp.test(line):
                         this.parsePathFilter({ line });
+                        break;
+                    case this.tagsRegexp.test(line):
+                        this.parseTagsFilter({ line });
                         break;
                     case this.descriptionRegexp.test(line):
                         this.parseDescriptionFilter({ line });
@@ -198,6 +202,34 @@ export class Query {
             }
         } else {
             this._error = 'do not understand query filter (path)';
+        }
+    }
+
+    private parseTagsFilter({ line }: { line: string }): void {
+        const tagsMatch = line.match(this.tagsRegexp);
+        if (tagsMatch !== null) {
+            const tagsRaw = tagsMatch[2].split(',');
+            const tags = tagsRaw.map((tag: string) => tag.trim());
+            const filterMethod = tagsMatch[1];
+            if (filterMethod === 'includes') {
+                // treat separated tags with OR relation -> at least one tag must match
+                this._filters.push((task: Task) => {
+                        const tagsInFile = readTagsInFile({task});
+                        return tags.some((tag: string) => tagsInFile.includes(tag));
+                    }
+                );
+            } else if (tagsMatch[1] === 'does not include') {
+                // treat separated tags with OR relation -> at least one tag must be missing
+                this._filters.push((task: Task) => {
+                        const tagsInFile = readTagsInFile({task});
+                        return tags.some((tag: string) => !tagsInFile.includes(tag));
+                    }
+                );
+            } else {
+                this._error = 'do not understand query filter (tags)';
+            }
+        } else {
+            this._error = 'do not understand query filter (tags)';
         }
     }
 
