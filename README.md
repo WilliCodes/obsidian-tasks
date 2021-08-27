@@ -102,6 +102,7 @@ There are two ways to mark a task done:
 
 A "done" task will have the date it was done appended to the end of its line.
 For example: `✅ 2021-04-09` means the task was done on the 9th of April, 2021.
+If the `Link done dates` setting is activated, the date will be an internal link: `✅ [[2021-04-09]]`.
 
 ### Filtering checklist items
 
@@ -132,6 +133,8 @@ For example: `📅 2021-04-09` means the task is due on the 9th of April, 2021.
 ```
 - [ ] take out the trash 📅 2021-04-09
 ```
+
+If the `Link due dates` setting is activated, the date will be an internal link: `📅 [[2021-04-09]]`.
 
 Instead of adding the emoji and the date manually, you can use the `Tasks: Create or edit` command when creating or editing a task.
 When you use the command, you can also set a due date like "Monday", "tomorrow", or "next week" and Tasks will automatically save the date in the correct format.

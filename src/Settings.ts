@@ -1,11 +1,15 @@
 export interface Settings {
     globalFilter: string;
     removeGlobalFilter: boolean;
+    linkDueDate: boolean;
+    linkDoneDate: boolean;
 }
 
 const defaultSettings: Settings = {
     globalFilter: '',
     removeGlobalFilter: false,
+    linkDueDate: false,
+    linkDoneDate: false,
 };
 
 let settings: Settings = { ...defaultSettings };

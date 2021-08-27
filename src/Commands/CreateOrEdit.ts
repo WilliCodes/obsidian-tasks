@@ -1,6 +1,7 @@
 import { App, Editor, MarkdownView, View } from 'obsidian';
 import { TaskModal } from '../TaskModal';
 import { Status, Task } from '../Task';
+import { getSettings } from '../Settings';
 
 export const createOrEdit = (
     checking: boolean,
@@ -55,6 +56,8 @@ const taskFromLine = ({ line, path }: { line: string; path: string }): Task => {
     if (task !== null) {
         return task;
     }
+    
+    const { linkDueDate, linkDoneDate } = getSettings();
 
     // If we are not on a line of a task, we take what we have.
     // The non-task line can still be a checklist, for example if it is lacking the global filter.
@@ -70,7 +73,9 @@ const taskFromLine = ({ line, path }: { line: string; path: string }): Task => {
             indentation: '',
             originalStatusCharacter: ' ',
             dueDate: null,
+            dueDateLink: linkDueDate,
             doneDate: null,
+            doneDateLink: linkDoneDate,
             recurrenceRule: null,
             // We don't need the following fields to edit here in the editor.
             sectionStart: 0,
@@ -100,7 +105,9 @@ const taskFromLine = ({ line, path }: { line: string; path: string }): Task => {
         originalStatusCharacter: statusString,
         blockLink,
         dueDate: null,
+        dueDateLink: linkDueDate,
         doneDate: null,
+        doneDateLink: linkDoneDate,
         recurrenceRule: null,
         // We don't need the following fields to edit here in the editor.
         sectionStart: 0,
