@@ -55,7 +55,7 @@ const taskFromLine = ({ line, path }: { line: string; path: string }): Task => {
     if (task !== null) {
         return task;
     }
-
+    
     // If we are not on a line of a task, we take what we have.
     // The non-task line can still be a checklist, for example if it is lacking the global filter.
     const nonTaskRegex: RegExp = /^([\s\t]*)[-*]? *(\[(.)\])? *(.*)/u;
@@ -70,7 +70,9 @@ const taskFromLine = ({ line, path }: { line: string; path: string }): Task => {
             indentation: '',
             originalStatusCharacter: ' ',
             dueDate: null,
+            dueTime: null,
             doneDate: null,
+            doneTime: null,
             recurrenceRule: null,
             // We don't need the following fields to edit here in the editor.
             sectionStart: 0,
@@ -100,7 +102,9 @@ const taskFromLine = ({ line, path }: { line: string; path: string }): Task => {
         originalStatusCharacter: statusString,
         blockLink,
         dueDate: null,
+        dueTime: null,
         doneDate: null,
+        doneTime: null,
         recurrenceRule: null,
         // We don't need the following fields to edit here in the editor.
         sectionStart: 0,

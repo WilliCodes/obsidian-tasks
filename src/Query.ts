@@ -23,7 +23,7 @@ export class Query {
         /^heading (includes|does not include) (.*)/;
 
     private readonly hideOptionsRegexp =
-        /^hide (task count|backlink|done date|due date|recurrence rule|edit button)/;
+        /^hide (task count|backlink|done date|done time|due date|due time|recurrence rule|edit button)/;
 
     private readonly recurringString = 'is recurring';
     private readonly notRecurringString = 'is not recurring';
@@ -119,8 +119,12 @@ export class Query {
                 this._layoutOptions.hideBacklinks = true;
             } else if (option === 'done date') {
                 this._layoutOptions.hideDoneDate = true;
+            } else if (option === 'done time') {
+                this._layoutOptions.hideDoneTime = true;
             } else if (option === 'due date') {
                 this._layoutOptions.hideDueDate = true;
+            } else if (option === 'due time') {
+                this._layoutOptions.hideDueTime = true;
             } else if (option === 'recurrence rule') {
                 this._layoutOptions.hideRecurrenceRule = true;
             } else if (option === 'edit button') {

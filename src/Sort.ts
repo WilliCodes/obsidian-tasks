@@ -21,9 +21,29 @@ export class Sort {
         } else if (a.dueDate === null && b.dueDate !== null) {
             return 1;
         } else if (a.dueDate !== null && b.dueDate !== null) {
-            if (a.dueDate.isAfter(b.dueDate)) {
+            if (a.dueDate.isSame(b.dueDate, 'day')) {
+                return Sort.compareByTime(a, b);
+            } else if (a.dueDate.isAfter(b.dueDate)) {
                 return 1;
             } else if (a.dueDate.isBefore(b.dueDate)) {
+                return -1;
+            } else {
+                return Sort.compareByPath(a, b);
+            }
+        } else {
+            return Sort.compareByPath(a, b);
+        }
+    }
+
+    private static compareByTime(a: Task, b: Task): -1 | 0 | 1 {
+        if (a.dueTime !== null && b.dueTime === null) {
+            return -1;
+        } else if (a.dueTime === null && b.dueTime !== null) {
+            return 1;
+        } else if (a.dueTime !== null && b.dueTime !== null) {
+            if (a.dueTime.isAfter(b.dueTime)) {
+                return 1;
+            } else if (a.dueTime.isBefore(b.dueTime)) {
                 return -1;
             } else {
                 return Sort.compareByPath(a, b);

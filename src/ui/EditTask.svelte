@@ -14,27 +14,35 @@
         description: string;
         status: Status;
         recurrenceRule: string;
-        dueDate: string;
+        dueDateTime: string;
         doneDate: string;
     } = {
         description: '',
         status: Status.Todo,
         recurrenceRule: '',
-        dueDate: '',
+        dueDateTime: '',
         doneDate: '',
     };
 
     let parsedDueDate: string = '';
+    let dueWithTime: boolean = false;
     let parsedRRule: string = '';
     let parsedDone: string = '';
 
     $: {
-        if (!editableTask.dueDate) {
+        if (!editableTask.dueDateTime) {
             parsedDueDate = '<i>no due date</>'
         } else {
-            const parsed = chrono.parseDate(editableTask.dueDate, new Date(), { forwardDate: true });
-            if (parsed !== null) {
-                parsedDueDate = window.moment(parsed).format('YYYY-MM-DD');
+            const parseResult = chrono.parse(editableTask.dueDateTime, new Date(), { forwardDate: true });
+            if (parseResult && parseResult.length != 0) {
+                const parsed = parseResult[0].start.date();
+                if (parseResult[0].start.isCertain('hour')) {
+                    parsedDueDate = window.moment(parsed).format('YYYY-MM-DD HH:mm');
+                    dueWithTime = true;
+                } else {
+                    parsedDueDate = window.moment(parsed).format('YYYY-MM-DD');
+                }
+                
             } else {
                 parsedDueDate = '<i>invalid due date</i>'
             }
@@ -69,11 +77,18 @@
     onMount(() => {
         const { globalFilter } = getSettings();
         const description = task.description.replace(globalFilter, '').replace('  ', ' ').trim();
+        let dueDateTime = '';
+        if (task.dueDate) {
+            dueDateTime += task.dueDate.format('YYYY-MM-DD');
+            if (task.dueTime) {
+                dueDateTime += " " + task.dueTime.format('HH:mm');
+            }
+        }
         editableTask = {
             description,
             status: task.status,
             recurrenceRule: task.recurrenceRule ? task.recurrenceRule.toText() : '',
-            dueDate: task.dueDate ? task.dueDate.format('YYYY-MM-DD') : '',
+            dueDateTime,
             doneDate: task.doneDate ? task.doneDate.format('YYYY-MM-DD') : '',
          };
         setTimeout(() => {descriptionInput.focus();}, 10);
@@ -94,9 +109,13 @@
         } catch {/*nothing to do*/}
 
         let dueDate: moment.Moment | null = null;
-        const parsedDueDate = chrono.parseDate(editableTask.dueDate, new Date(), { forwardDate: true });
+        const parsedDueDate = chrono.parseDate(editableTask.dueDateTime, new Date(), { forwardDate: true });
         if (parsedDueDate !== null) {
             dueDate = window.moment(parsedDueDate);
+        }
+        let dueTime: moment.Moment | null = null;
+        if (dueWithTime) {
+            dueTime = window.moment(parsedDueDate);
         }
 
         const updatedTask = new Task({
@@ -105,6 +124,7 @@
             status: editableTask.status,
             recurrenceRule,
             dueDate,
+            dueTime,
             doneDate: window.moment(editableTask.doneDate, 'YYYY-MM-DD').isValid() ? window.moment(editableTask.doneDate, 'YYYY-MM-DD') : null,
         });
 
@@ -121,7 +141,7 @@
         <hr />
         <div class="tasks-modal-section">
             <label for="due">Due</label>
-            <input bind:value={editableTask.dueDate} id="due" type="text" placeholder="Try 'Monday' or 'tomorrow'." />
+            <input bind:value={editableTask.dueDateTime} id="due" type="text" placeholder="Try 'Monday' or 'tomorrow'." />
             <code>📅 {@html parsedDueDate}</code>
         </div>
         <hr />
