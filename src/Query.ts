@@ -184,14 +184,16 @@ export class Query {
     private parsePathFilter({ line }: { line: string }): void {
         const pathMatch = line.match(this.pathRegexp);
         if (pathMatch !== null) {
+            const pathsRaw = pathMatch[2].split(',');
+            const paths = pathsRaw.map((path: string) => path.trim());
             const filterMethod = pathMatch[1];
             if (filterMethod === 'includes') {
                 this._filters.push((task: Task) =>
-                    task.path.includes(pathMatch[2]),
+                    paths.some((path: string) => task.path.includes(path)),
                 );
             } else if (pathMatch[1] === 'does not include') {
-                this._filters.push(
-                    (task: Task) => !task.path.includes(pathMatch[2]),
+                this._filters.push((task: Task) => 
+                paths.some((path: string) => !task.path.includes(path)),
                 );
             } else {
                 this._error = 'do not understand query filter (path)';

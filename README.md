@@ -205,7 +205,9 @@ The following filters exist:
 - `due (before|after|on) <date>`
 - `is recurring`
 - `is not recurring`
-- `path (includes|does not include) <path>`
+- `path (includes|does not include) <path> [,<path> ...]`
+    - If multiple paths are provided, the task`s path only has to include/not include one of them.
+    - If all paths should match the condition, separate them in multiple filters.
 - `description (includes|does not include) <string>`
     - Matches case-insensitive (disregards capitalization).
 - `heading (includes|does not include) <string>`
