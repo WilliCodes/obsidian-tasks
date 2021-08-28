@@ -16,12 +16,14 @@
         recurrenceRule: string;
         dueDateTime: string;
         doneDate: string;
+        doneTime: string;
     } = {
         description: '',
         status: Status.Todo,
         recurrenceRule: '',
         dueDateTime: '',
         doneDate: '',
+        doneTime: '',
     };
 
     let parsedDueDate: string = '';
@@ -65,9 +67,17 @@
         if (!editableTask.doneDate) {
             parsedDone = '<i>no done date</i>'
         } else {
-            const parsed = chrono.parseDate(editableTask.doneDate);
-            if (parsed !== null) {
-                parsedDone = window.moment(parsed).format('YYYY-MM-DD');
+            const parsedDate = chrono.parseDate(editableTask.doneDate);
+            if (parsedDate !== null) {
+                parsedDone = window.moment(parsedDate).format('YYYY-MM-DD');
+                if (editableTask.doneTime) {
+                    const parsedTime = chrono.parseDate(editableTask.doneTime);
+                    if (parsedTime !== null) {
+                        parsedDone += " " + window.moment(parsedTime).format('HH:mm');
+                    } else {
+                        parsedDone = '<i>invalid done time</i>'
+                    }
+                }
             } else {
                 parsedDone = '<i>invalid done date</i>'
             }
@@ -90,6 +100,7 @@
             recurrenceRule: task.recurrenceRule ? task.recurrenceRule.toText() : '',
             dueDateTime,
             doneDate: task.doneDate ? task.doneDate.format('YYYY-MM-DD') : '',
+            doneTime: task.doneTime ? task.doneTime.format('HH:mm') : '',
          };
         setTimeout(() => {descriptionInput.focus();}, 10);
     });
@@ -126,6 +137,7 @@
             dueDate,
             dueTime,
             doneDate: window.moment(editableTask.doneDate, 'YYYY-MM-DD').isValid() ? window.moment(editableTask.doneDate, 'YYYY-MM-DD') : null,
+            doneTime: window.moment(editableTask.doneTime, 'HH:mm').isValid() ? window.moment(editableTask.doneTime, 'HH:mm') : null,
         });
 
         onSubmit([updatedTask]);
