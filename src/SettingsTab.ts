@@ -65,7 +65,7 @@ export class SettingsTab extends PluginSettingTab {
                     });
             });
 
-            new Setting(containerEl)
+        new Setting(containerEl)
             .setName('Done time')
             .setDesc(
                 'When marking tasks as done, this adds the time as "HH:mm" to the done date.',
@@ -73,13 +73,11 @@ export class SettingsTab extends PluginSettingTab {
             .addToggle((toggle) => {
                 const settings = getSettings();
 
-                toggle
-                    .setValue(settings.doneTime)
-                    .onChange(async (value) => {
-                        updateSettings({ doneTime: value });
+                toggle.setValue(settings.doneTime).onChange(async (value) => {
+                    updateSettings({ doneTime: value });
 
-                        await this.plugin.saveSettings();
-                    });
+                    await this.plugin.saveSettings();
+                });
             });
     }
 }

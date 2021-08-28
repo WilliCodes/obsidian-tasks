@@ -39,8 +39,10 @@ export class Task {
     public static readonly taskRegex = /^([\s\t]*)[-*] +\[(.)\] *(.*)/u;
     // The following regexes end with `$` because they will be matched and
     // removed from the end until none are left.
-    public static readonly dueDateTimeRegex = /[📅📆🗓] ?(\d{4}-\d{2}-\d{2}) ?(\d{2}:\d{2})?$/u;
-    public static readonly doneDateTimeRegex = /✅ ?(\d{4}-\d{2}-\d{2}) ?(\d{2}:\d{2})?$/u;
+    public static readonly dueDateTimeRegex =
+        /[📅📆🗓] ?(\d{4}-\d{2}-\d{2}) ?(\d{2}:\d{2})?$/u;
+    public static readonly doneDateTimeRegex =
+        /✅ ?(\d{4}-\d{2}-\d{2}) ?(\d{2}:\d{2})?$/u;
     public static readonly recurrenceRegex = /🔁([a-zA-Z0-9, !]+)$/u;
     public static readonly blockLinkRegex = / \^[a-zA-Z0-9-]+$/u;
 
@@ -156,7 +158,10 @@ export class Task {
             if (doneDateTimeMatch !== null) {
                 doneDate = window.moment(doneDateTimeMatch[1], Task.dateFormat);
                 if (doneDateTimeMatch[2]) {
-                    doneTime = window.moment(doneDateTimeMatch[2], Task.timeFormat);
+                    doneTime = window.moment(
+                        doneDateTimeMatch[2],
+                        Task.timeFormat,
+                    );
                 }
                 description = description
                     .replace(Task.doneDateTimeRegex, '')
@@ -168,9 +173,14 @@ export class Task {
             if (dueDateTimeMatch !== null) {
                 dueDate = window.moment(dueDateTimeMatch[1], Task.dateFormat);
                 if (dueDateTimeMatch[2]) {
-                    dueTime = window.moment(dueDateTimeMatch[2], Task.timeFormat);
+                    dueTime = window.moment(
+                        dueDateTimeMatch[2],
+                        Task.timeFormat,
+                    );
                 }
-                description = description.replace(Task.dueDateTimeRegex, '').trim();
+                description = description
+                    .replace(Task.dueDateTimeRegex, '')
+                    .trim();
                 matched = true;
             }
 

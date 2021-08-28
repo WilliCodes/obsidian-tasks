@@ -55,7 +55,7 @@ const taskFromLine = ({ line, path }: { line: string; path: string }): Task => {
     if (task !== null) {
         return task;
     }
-    
+
     // If we are not on a line of a task, we take what we have.
     // The non-task line can still be a checklist, for example if it is lacking the global filter.
     const nonTaskRegex: RegExp = /^([\s\t]*)[-*]? *(\[(.)\])? *(.*)/u;
