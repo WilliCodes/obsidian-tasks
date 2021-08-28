@@ -192,8 +192,8 @@ export class Query {
                     paths.some((path: string) => task.path.includes(path)),
                 );
             } else if (pathMatch[1] === 'does not include') {
-                this._filters.push((task: Task) => 
-                paths.some((path: string) => !task.path.includes(path)),
+                this._filters.push((task: Task) =>
+                    paths.some((path: string) => !task.path.includes(path)),
                 );
             } else {
                 this._error = 'do not understand query filter (path)';
