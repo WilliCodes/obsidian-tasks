@@ -214,17 +214,17 @@ export class Query {
             if (filterMethod === 'includes') {
                 // treat separated tags with OR relation -> at least one tag must match
                 this._filters.push((task: Task) => {
-                        const tagsInFile = readTagsInFile({task});
-                        return tags.some((tag: string) => tagsInFile.includes(tag));
-                    }
-                );
+                    const tagsInFile = readTagsInFile({ task });
+                    return tags.some((tag: string) => tagsInFile.includes(tag));
+                });
             } else if (tagsMatch[1] === 'does not include') {
                 // treat separated tags with OR relation -> at least one tag must be missing
                 this._filters.push((task: Task) => {
-                        const tagsInFile = readTagsInFile({task});
-                        return tags.some((tag: string) => !tagsInFile.includes(tag));
-                    }
-                );
+                    const tagsInFile = readTagsInFile({ task });
+                    return tags.some(
+                        (tag: string) => !tagsInFile.includes(tag),
+                    );
+                });
             } else {
                 this._error = 'do not understand query filter (tags)';
             }

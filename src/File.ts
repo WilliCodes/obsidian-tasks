@@ -1,4 +1,10 @@
-import { getAllTags, ListItemCache, MetadataCache, TFile, Vault } from 'obsidian';
+import {
+    ListItemCache,
+    MetadataCache,
+    TFile,
+    Vault,
+    getAllTags,
+} from 'obsidian';
 
 import { getSettings } from './Settings';
 import type { Task } from './Task';
@@ -161,7 +167,7 @@ const tryRepetitive = async ({
 /**
  * Reads all tags within in the Task's file.
  */
- export const readTagsInFile = ({ task }: { task: Task }): string[] => {
+export const readTagsInFile = ({ task }: { task: Task }): string[] => {
     if (vault === undefined || metadataCache === undefined) {
         console.error('Tasks: cannot use File before initializing it.');
         return [];
@@ -169,9 +175,7 @@ const tryRepetitive = async ({
 
     const file = vault.getAbstractFileByPath(task.path);
     if (!(file instanceof TFile)) {
-        console.warn(
-            `Tasks: No file found for task ${task.description}.`,
-        );
+        console.warn(`Tasks: No file found for task ${task.description}.`);
         return [];
     }
 
@@ -184,9 +188,7 @@ const tryRepetitive = async ({
 
     const fileCache = metadataCache.getFileCache(file);
     if (fileCache == undefined || fileCache === null) {
-        console.warn(
-            `Tasks: No file cache found for file ${file.path}.`,
-        );
+        console.warn(`Tasks: No file cache found for file ${file.path}.`);
         return [];
     }
 
@@ -194,7 +196,9 @@ const tryRepetitive = async ({
     if (!tags) {
         return [];
     } else {
-        const expanded_tags = tags.map((tag: string) => expandSubtags({ tag: tag.toLowerCase() })).reduce((acc, val) => acc.concat(val), []);
+        const expanded_tags = tags
+            .map((tag: string) => expandSubtags({ tag: tag.toLowerCase() }))
+            .reduce((acc, val) => acc.concat(val), []);
         return expanded_tags;
     }
 };
@@ -204,15 +208,12 @@ const tryRepetitive = async ({
  * This enables to include/exclude all subtags with a parent tag.
  */
 const expandSubtags = ({ tag }: { tag: string }): string[] => {
-    let all_tags = [tag];
-    let last_idx = 0;
-    while (true) {
-        const idx = tag.indexOf("/", last_idx+1);
-        if (idx === -1) {
-            break;
+    const all_tags = [tag];
+    const chars = [...tag];
+    chars.forEach((c, i) => {
+        if (c === '/') {
+            all_tags.push(chars.slice(0, i).join(''));
         }
-        all_tags.push(tag.slice(0, idx))
-        last_idx = idx;
-    }
+    });
     return all_tags;
-}
+};
