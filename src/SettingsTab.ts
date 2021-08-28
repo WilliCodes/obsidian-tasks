@@ -64,8 +64,8 @@ export class SettingsTab extends PluginSettingTab {
                         await this.plugin.saveSettings();
                     });
             });
-        
-            new Setting(containerEl)
+
+        new Setting(containerEl)
             .setName('Link due dates')
             .setDesc(
                 'When creating new tasks, due dates will be internal links by default.',
@@ -82,7 +82,7 @@ export class SettingsTab extends PluginSettingTab {
                     });
             });
 
-            new Setting(containerEl)
+        new Setting(containerEl)
             .setName('Link done dates')
             .setDesc(
                 'When marking tasks as done, done dates will be internal links.',

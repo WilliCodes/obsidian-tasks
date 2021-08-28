@@ -56,7 +56,7 @@ const taskFromLine = ({ line, path }: { line: string; path: string }): Task => {
     if (task !== null) {
         return task;
     }
-    
+
     const { linkDueDate, linkDoneDate } = getSettings();
 
     // If we are not on a line of a task, we take what we have.
