@@ -23,6 +23,13 @@ describe('Sort', () => {
         expect(Sort.by({ sorting: ['due'] }, [b, a])).toEqual([a, b]);
     });
 
+    test('by due with time', () => {
+        const a = fromLine('- [x] bring out the trash 🗓 2021-09-12 12:35');
+        const b = fromLine('- [ ] pet the dog 🗓 2021-09-12 13:25');
+        expect(Sort.by({ sorting: ['due'] }, [a, b])).toEqual([a, b]);
+        expect(Sort.by({ sorting: ['due'] }, [b, a])).toEqual([a, b]);
+    });
+
     test('by done', () => {
         const a = fromLine('- [ ] bring out the trash 🗓 2021-09-12');
         const b = fromLine('- [x] pet the cat 🗓 2021-09-15 ✅ 2021-09-16');
