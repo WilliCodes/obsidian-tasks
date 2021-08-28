@@ -205,6 +205,7 @@ The following filters exist:
 - `not done`
 - `done (before|after|on) <date>`
 - `no due date`
+- `no due time`
 - `due (before|after|on) <date>`
 - `is recurring`
 - `is not recurring`

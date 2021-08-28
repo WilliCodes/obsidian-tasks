@@ -10,6 +10,7 @@ export class Query {
     private _error: string | undefined = undefined;
 
     private readonly noDueString = 'no due date';
+    private readonly noDueTimeString = 'no due time';
     private readonly dueRegexp = /^due (before|after|on)? ?(.*)/;
 
     private readonly doneString = 'done';
@@ -64,6 +65,9 @@ export class Query {
                         break;
                     case line === this.noDueString:
                         this._filters.push((task) => task.dueDate === null);
+                        break;
+                    case line === this.noDueTimeString:
+                        this._filters.push((task) => task.dueTime === null);
                         break;
                     case this.dueRegexp.test(line):
                         this.parseDueFilter({ line });
