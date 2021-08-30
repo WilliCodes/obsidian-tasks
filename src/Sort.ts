@@ -53,11 +53,11 @@ export class Sort {
     }
 
     private static compareByDueDate(a: Task, b: Task): -1 | 0 | 1 {
-        return Sort.compareByDate(a.dueDate, b.dueDate);
+        return Sort.compareByDate(a.dueDateTime, b.dueDateTime);
     }
 
     private static compareByDoneDate(a: Task, b: Task): -1 | 0 | 1 {
-        return Sort.compareByDate(a.doneDate, b.doneDate);
+        return Sort.compareByDate(a.doneDateTime, b.doneDateTime);
     }
 
     private static compareByDate(

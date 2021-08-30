@@ -1,5 +1,6 @@
 import { Query } from '../src/Query';
 import { Status, Task } from '../src/Task';
+import { fromLine } from './Sort.test'
 
 describe('Query', () => {
     describe('filtering', () => {
@@ -15,8 +16,10 @@ describe('Query', () => {
                     sectionIndex: 0,
                     originalStatusCharacter: ' ',
                     precedingHeader: null,
-                    dueDate: null,
-                    doneDate: null,
+                    dueDateTime: null,
+                    hasDueTime: false,
+                    doneDateTime: null,
+                    hasDoneTime: false,
                     recurrenceRule: null,
                     blockLink: '',
                 }),
@@ -29,8 +32,10 @@ describe('Query', () => {
                     sectionIndex: 0,
                     originalStatusCharacter: ' ',
                     precedingHeader: null,
-                    dueDate: null,
-                    doneDate: null,
+                    dueDateTime: null,
+                    hasDueTime: false,
+                    doneDateTime: null,
+                    hasDoneTime: false,
                     recurrenceRule: null,
                     blockLink: '',
                 }),
@@ -48,6 +53,117 @@ describe('Query', () => {
             expect(filteredTasks.length).toEqual(1);
             expect(filteredTasks[0]).toEqual(tasks[0]);
         });
+    });
+
+    it('filters due before date', () => {
+        // Arrange
+        const a = fromLine('- [ ] a 🗓 2000-02-01');
+        const b = fromLine('- [ ] b 🗓 2000-02-01 23:30');
+        const c = fromLine('- [ ] c 🗓 2000-02-02');
+        const d = fromLine('- [ ] d 🗓 2000-02-02 00:30');
+        const e = fromLine('- [ ] e 🗓 2000-02-03');
+        const tasks = [a, b, c, d, e];
+        const input = 'due before 2000-02-02';
+        const query = new Query({ source: input });
+
+        // Act
+        let filteredTasks = [...tasks];
+        query.filters.forEach((filter) => {
+            filteredTasks = filteredTasks.filter(filter);
+        });
+
+        // Assert
+        expect(filteredTasks.length).toEqual(2);
+        expect(filteredTasks[0]).toEqual(a);
+        expect(filteredTasks[1]).toEqual(b);
+    });
+
+    it('filters due after date', () => {
+        // Arrange
+        const a = fromLine('- [ ] a 🗓 2000-02-01');
+        const b = fromLine('- [ ] b 🗓 2000-02-02');
+        const c = fromLine('- [ ] c 🗓 2000-02-02 02:02');
+        const d = fromLine('- [ ] d 🗓 2000-02-03');
+        const tasks = [a, b, c, d];
+        const input = 'due after 2000-02-02';
+        const query = new Query({ source: input });
+
+        // Act
+        let filteredTasks = [...tasks];
+        query.filters.forEach((filter) => {
+            filteredTasks = filteredTasks.filter(filter);
+        });
+
+        // Assert
+        expect(filteredTasks.length).toEqual(1);
+        expect(filteredTasks[0]).toEqual(d);
+    });
+
+    it('filters due on date', () => {
+        // Arrange
+        const a = fromLine('- [ ] a 🗓 2000-02-01 01:01');
+        const b = fromLine('- [ ] b 🗓 2000-02-02');
+        const c = fromLine('- [ ] c 🗓 2000-02-02 02:02');
+        const d = fromLine('- [ ] d 🗓 2000-02-03');
+        const tasks = [a, b, c, d];
+        const input = 'due 2000-02-02';
+        const query = new Query({ source: input });
+
+        // Act
+        let filteredTasks = [...tasks];
+        query.filters.forEach((filter) => {
+            filteredTasks = filteredTasks.filter(filter);
+        });
+
+        // Assert
+        expect(filteredTasks.length).toEqual(2);
+        expect(filteredTasks[0]).toEqual(b);
+        expect(filteredTasks[1]).toEqual(c);
+    });
+
+    it('filters due before datetime', () => {
+        // Arrange
+        const a = fromLine('- [ ] a 🗓 2000-02-01');
+        const b = fromLine('- [ ] b 🗓 2000-02-02 01:01');
+        const c = fromLine('- [ ] c 🗓 2000-02-02 03:03');
+        const d = fromLine('- [ ] d 🗓 2000-02-03');
+        const tasks = [a, b, c, d];
+        const input = 'due before 2000-02-02 02:02';
+        const query = new Query({ source: input });
+
+        // Act
+        let filteredTasks = [...tasks];
+        query.filters.forEach((filter) => {
+            filteredTasks = filteredTasks.filter(filter);
+        });
+
+        // Assert
+        expect(filteredTasks.length).toEqual(2);
+        expect(filteredTasks[0]).toEqual(a);
+        expect(filteredTasks[1]).toEqual(b);
+    });
+
+    it('filters due after datetime', () => {
+        // Arrange
+        const a = fromLine('- [ ] a 🗓 2000-02-01');
+        const b = fromLine('- [ ] b 🗓 2000-02-02');
+        const c = fromLine('- [ ] c 🗓 2000-02-02 01:01');
+        const d = fromLine('- [ ] d 🗓 2000-02-02 03:03');
+        const e = fromLine('- [ ] e 🗓 2000-02-03');
+        const tasks = [a, b, c, d, e];
+        const input = 'due after 2000-02-02 02:02';
+        const query = new Query({ source: input });
+
+        // Act
+        let filteredTasks = [...tasks];
+        query.filters.forEach((filter) => {
+            filteredTasks = filteredTasks.filter(filter);
+        });
+
+        // Assert
+        expect(filteredTasks.length).toEqual(2);
+        expect(filteredTasks[0]).toEqual(d);
+        expect(filteredTasks[1]).toEqual(e);
     });
 
     describe('sorting instructions', () => {

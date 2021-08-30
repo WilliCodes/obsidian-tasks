@@ -26,18 +26,25 @@ export class Task {
      */
     public readonly originalStatusCharacter: string;
     public readonly precedingHeader: string | null;
-    public readonly dueDate: Moment | null;
-    public readonly doneDate: Moment | null;
+    public readonly dueDateTime: Moment | null;
+    public readonly hasDueTime: boolean;
+    public readonly doneDateTime: Moment | null;
+    public readonly hasDoneTime: boolean;
     public readonly recurrenceRule: RRule | null;
     /** The blockLink is a "^" annotation after the dates/recurrence rules. */
     public readonly blockLink: string;
 
     public static readonly dateFormat = 'YYYY-MM-DD';
+    public static readonly timeFormat = 'HH:mm';
+    public static readonly dateTimeFormat =
+        Task.dateFormat + ' ' + Task.timeFormat;
     public static readonly taskRegex = /^([\s\t]*)[-*] +\[(.)\] *(.*)/u;
     // The following regexes end with `$` because they will be matched and
     // removed from the end until none are left.
-    public static readonly dueDateRegex = /[📅📆🗓] ?(\d{4}-\d{2}-\d{2})$/u;
-    public static readonly doneDateRegex = /✅ ?(\d{4}-\d{2}-\d{2})$/u;
+    public static readonly dueDateTimeRegex =
+        /[📅📆🗓] ?(\d{4}-\d{2}-\d{2} ?(\d{2}:\d{2})?)$/u;
+    public static readonly doneDateTimeRegex =
+        /✅ ?(\d{4}-\d{2}-\d{2} ?(\d{2}:\d{2})?)$/u;
     public static readonly recurrenceRegex = /🔁([a-zA-Z0-9, !]+)$/u;
     public static readonly blockLinkRegex = / \^[a-zA-Z0-9-]+$/u;
 
@@ -50,8 +57,10 @@ export class Task {
         sectionIndex,
         originalStatusCharacter,
         precedingHeader,
-        dueDate,
-        doneDate,
+        dueDateTime,
+        hasDueTime,
+        doneDateTime,
+        hasDoneTime,
         recurrenceRule,
         blockLink,
     }: {
@@ -63,8 +72,10 @@ export class Task {
         sectionIndex: number;
         originalStatusCharacter: string;
         precedingHeader: string | null;
-        dueDate: moment.Moment | null;
-        doneDate: moment.Moment | null;
+        dueDateTime: moment.Moment | null;
+        hasDueTime: boolean;
+        doneDateTime: moment.Moment | null;
+        hasDoneTime: boolean;
         recurrenceRule: RRule | null;
         blockLink: string;
     }) {
@@ -76,8 +87,10 @@ export class Task {
         this.sectionIndex = sectionIndex;
         this.originalStatusCharacter = originalStatusCharacter;
         this.precedingHeader = precedingHeader;
-        this.dueDate = dueDate;
-        this.doneDate = doneDate;
+        this.dueDateTime = dueDateTime;
+        this.hasDueTime = hasDueTime;
+        this.doneDateTime = doneDateTime;
+        this.hasDoneTime = hasDoneTime;
         this.recurrenceRule = recurrenceRule;
         this.blockLink = blockLink;
     }
@@ -133,27 +146,53 @@ export class Task {
         // description in any order. The loop should only run once if the
         // strings are in the expected order after the description.
         let matched: boolean;
-        let dueDate: Moment | null = null;
-        let doneDate: Moment | null = null;
+        let dueDateTime: Moment | null = null;
+        let hasDueTime: boolean = false;
+        let doneDateTime: Moment | null = null;
+        let hasDoneTime: boolean = false;
         let recurrenceRule: RRule | null = null;
         // Add a "max runs" failsafe to never end in an endless loop:
         const maxRuns = 4;
         let runs = 0;
         do {
             matched = false;
-            const doneDateMatch = description.match(Task.doneDateRegex);
-            if (doneDateMatch !== null) {
-                doneDate = window.moment(doneDateMatch[1], Task.dateFormat);
+            const doneDateTimeMatch = description.match(Task.doneDateTimeRegex);
+            if (doneDateTimeMatch !== null) {
+                if (doneDateTimeMatch[2]) {
+                    doneDateTime = window.moment(
+                        doneDateTimeMatch[1],
+                        Task.dateTimeFormat,
+                    );
+                    hasDoneTime = true;
+                } else {
+                    doneDateTime = window.moment(
+                        doneDateTimeMatch[1],
+                        Task.dateFormat,
+                    );
+                }
                 description = description
-                    .replace(Task.doneDateRegex, '')
+                    .replace(Task.doneDateTimeRegex, '')
                     .trim();
                 matched = true;
             }
 
-            const dueDateMatch = description.match(Task.dueDateRegex);
-            if (dueDateMatch !== null) {
-                dueDate = window.moment(dueDateMatch[1], Task.dateFormat);
-                description = description.replace(Task.dueDateRegex, '').trim();
+            const dueDateTimeMatch = description.match(Task.dueDateTimeRegex);
+            if (dueDateTimeMatch !== null) {
+                if (dueDateTimeMatch[2]) {
+                    dueDateTime = window.moment(
+                        dueDateTimeMatch[1],
+                        Task.dateTimeFormat,
+                    );
+                    hasDueTime = true;
+                } else {
+                    dueDateTime = window.moment(
+                        dueDateTimeMatch[1],
+                        Task.dateFormat,
+                    );
+                }
+                description = description
+                    .replace(Task.dueDateTimeRegex, '')
+                    .trim();
                 matched = true;
             }
 
@@ -183,8 +222,10 @@ export class Task {
             sectionIndex,
             originalStatusCharacter: statusString,
             precedingHeader,
-            dueDate,
-            doneDate,
+            dueDateTime,
+            hasDueTime,
+            doneDateTime,
+            hasDoneTime,
             recurrenceRule,
             blockLink,
         });
@@ -283,17 +324,33 @@ export class Task {
         }
 
         if (!layoutOptions.hideDueDate) {
-            const dueDate: string = this.dueDate
-                ? ` 📅 ${this.dueDate.format(Task.dateFormat)}`
+            const dueDate: string = this.dueDateTime
+                ? ` 📅 ${this.dueDateTime.format(Task.dateFormat)}`
                 : '';
             taskString += dueDate;
         }
 
+        if (!layoutOptions.hideDueTime) {
+            const dueTime: string =
+                this.hasDueTime && this.dueDateTime
+                    ? ` ${this.dueDateTime.format(Task.timeFormat)}`
+                    : '';
+            taskString += dueTime;
+        }
+
         if (!layoutOptions.hideDoneDate) {
-            const doneDate: string = this.doneDate
-                ? ` ✅ ${this.doneDate.format(Task.dateFormat)}`
+            const doneDate: string = this.doneDateTime
+                ? ` ✅ ${this.doneDateTime.format(Task.dateFormat)}`
                 : '';
             taskString += doneDate;
+        }
+
+        if (!layoutOptions.hideDoneTime) {
+            const doneTime: string =
+                this.hasDoneTime && this.doneDateTime
+                    ? ` ${this.doneDateTime.format(Task.timeFormat)}`
+                    : '';
+            taskString += doneTime;
         }
 
         return taskString;
@@ -316,16 +373,18 @@ export class Task {
     public toggle(): Task[] {
         const newStatus: Status =
             this.status === Status.Todo ? Status.Done : Status.Todo;
-        let newDoneDate = null;
+        let newDoneDateTime = null;
         let nextOccurrence: Moment | undefined;
         if (newStatus !== Status.Todo) {
-            newDoneDate = window.moment();
+            newDoneDateTime = window.moment();
 
             // If this task is no longer todo, we need to check if it is recurring:
             if (this.recurrenceRule !== null) {
                 // If no due date, next occurrence is after "today".
                 const dtStart: Moment =
-                    this.dueDate !== null ? this.dueDate : window.moment();
+                    this.dueDateTime !== null
+                        ? this.dueDateTime.clone()
+                        : window.moment();
                 // RRule disregards the timezone:
                 dtStart.endOf('day').utc(true);
 
@@ -346,6 +405,15 @@ export class Task {
                 if (next !== null) {
                     // Re-add the timezone that RRule disregarded:
                     nextOccurrence = window.moment.utc(next);
+
+                    if (this.dueDateTime) {
+                        // Keep time of previous due date
+                        const prevTime = {
+                            hours: this.dueDateTime.hours(),
+                            minutes: this.dueDateTime.minutes(),
+                        };
+                        nextOccurrence.set(prevTime);
+                    }
                 }
             }
         }
@@ -353,7 +421,8 @@ export class Task {
         const toggledTask = new Task({
             ...this,
             status: newStatus,
-            doneDate: newDoneDate,
+            doneDateTime: newDoneDateTime,
+            hasDoneTime: getSettings().doneTime,
             originalStatusCharacter: newStatus === Status.Done ? 'x' : ' ',
         });
 
@@ -362,7 +431,7 @@ export class Task {
         if (nextOccurrence !== undefined) {
             const nextTask = new Task({
                 ...this,
-                dueDate: nextOccurrence,
+                dueDateTime: nextOccurrence,
                 // New occurrences cannot have the same block link.
                 // And random block links don't help.
                 blockLink: '',

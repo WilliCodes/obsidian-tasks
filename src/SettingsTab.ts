@@ -64,5 +64,20 @@ export class SettingsTab extends PluginSettingTab {
                         await this.plugin.saveSettings();
                     });
             });
+
+        new Setting(containerEl)
+            .setName('Add time to completed tasks')
+            .setDesc(
+                'In addition to the date, the current time will be added to a task marked as completed.\nFormat: "✅ YYYY-MM-DD HH:mm" ',
+            )
+            .addToggle((toggle) => {
+                const settings = getSettings();
+
+                toggle.setValue(settings.doneTime).onChange(async (value) => {
+                    updateSettings({ doneTime: value });
+
+                    await this.plugin.saveSettings();
+                });
+            });
     }
 }

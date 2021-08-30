@@ -5,7 +5,7 @@ window.moment = moment;
 import { Task } from '../src/Task';
 import { Sort } from '../src/Sort';
 
-function fromLine(line: string, path = '') {
+export function fromLine(line: string, path = '') {
     return Task.fromLine({
         line,
         path,
@@ -24,12 +24,30 @@ describe('Sort', () => {
         expect(Sort.by({ sorting: ['due'] }, [b, c, a])).toEqual([a, b, c]);
     });
 
+    test('by due with time', () => {
+        const a = fromLine('- [x] bring out the trash 🗓 2021-09-29');
+        const b = fromLine('- [ ] pet the dog 🗓 2021-09-29 08:00');
+        const c = fromLine('- [ ] pet the dog 🗓 2021-09-29 08:30');
+        const d = fromLine('- [ ] water the plants 🗓 2021-09-30 07:30');
+        expect(Sort.by({ sorting: ['due'] }, [a, b, c, d])).toEqual([a, b, c, d]);
+        expect(Sort.by({ sorting: ['due'] }, [d, b, c, a])).toEqual([a, b, c, d]);
+    });
+
     test('by done', () => {
         const a = fromLine('- [ ] bring out the trash 🗓 2021-09-12');
         const b = fromLine('- [x] pet the cat 🗓 2021-09-16 ✅ 2021-09-16');
         const c = fromLine('- [x] pet the cat 🗓 2021-09-15 ✅ 2021-09-15');
         expect(Sort.by({ sorting: ['done'] }, [a, b, c])).toEqual([c, b, a]);
         expect(Sort.by({ sorting: ['done'] }, [b, c, a])).toEqual([c, b, a]);
+    });
+
+    test('by done with time', () => {
+        const a = fromLine('- [ ] bring out the trash 🗓 2021-09-29');
+        const b = fromLine('- [x] pet the dog 🗓 2021-09-29 07:30 ✅ 2021-09-29 07:45');
+        const c = fromLine('- [x] pet the dog 🗓 2021-09-29 08:00 ✅ 2021-09-29 08:05');
+        const d = fromLine('- [x] water the plants 🗓 2021-09-30 07:30 ✅ 2021-09-29');
+        expect(Sort.by({ sorting: ['done'] }, [a, b, c, d])).toEqual([d, b, c, a]);
+        expect(Sort.by({ sorting: ['done'] }, [d, b, c, a])).toEqual([d, b, c, a]);
     });
 
     test('by due, path, status', () => {

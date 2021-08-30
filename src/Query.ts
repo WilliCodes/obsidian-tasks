@@ -1,4 +1,4 @@
-import chrono from 'chrono-node';
+import * as chrono from 'chrono-node';
 import { LayoutOptions } from './LayoutOptions';
 
 import { Status, Task } from './Task';
@@ -12,7 +12,8 @@ export class Query {
     private _error: string | undefined = undefined;
     private _sorting: Sorting[] = [];
 
-    private readonly noDueString = 'no due date';
+    private readonly noDueDateString = 'no due date';
+    private readonly noDueTimeString = 'no due time';
     private readonly dueRegexp = /^due (before|after|on)? ?(.*)/;
 
     private readonly doneString = 'done';
@@ -29,7 +30,7 @@ export class Query {
         /^heading (includes|does not include) (.*)/;
 
     private readonly hideOptionsRegexp =
-        /^hide (task count|backlink|done date|due date|recurrence rule|edit button)/;
+        /^hide (task count|backlink|done date|done time|due date|due time|recurrence rule|edit button)/;
 
     private readonly recurringString = 'is recurring';
     private readonly notRecurringString = 'is not recurring';
@@ -68,8 +69,11 @@ export class Query {
                     case line === this.excludeSubItemsString:
                         this._filters.push((task) => task.indentation === '');
                         break;
-                    case line === this.noDueString:
-                        this._filters.push((task) => task.dueDate === null);
+                    case line === this.noDueDateString:
+                        this._filters.push((task) => task.dueDateTime === null);
+                        break;
+                    case line === this.noDueTimeString:
+                        this._filters.push((task) => !task.hasDueTime);
                         break;
                     case this.dueRegexp.test(line):
                         this.parseDueFilter({ line });
@@ -132,8 +136,12 @@ export class Query {
                 this._layoutOptions.hideBacklinks = true;
             } else if (option === 'done date') {
                 this._layoutOptions.hideDoneDate = true;
+            } else if (option === 'done time') {
+                this._layoutOptions.hideDoneTime = true;
             } else if (option === 'due date') {
                 this._layoutOptions.hideDueDate = true;
+            } else if (option === 'due time') {
+                this._layoutOptions.hideDueTime = true;
             } else if (option === 'recurrence rule') {
                 this._layoutOptions.hideRecurrenceRule = true;
             } else if (option === 'edit button') {
@@ -147,21 +155,43 @@ export class Query {
     private parseDueFilter({ line }: { line: string }): void {
         const dueMatch = line.match(this.dueRegexp);
         if (dueMatch !== null) {
-            const filterDate = this.parseDate(dueMatch[2]);
-            if (!filterDate.isValid()) {
+            const parsedDueDate = chrono.parse(dueMatch[2])?.[0]?.start;
+            if (!parsedDueDate) {
                 this._error = 'do not understand due date';
             }
+            const parsedWithTime = parsedDueDate.isCertain('hour');
+            let filterDate = window.moment(parsedDueDate.date());
 
             let filter;
             if (dueMatch[1] === 'before') {
+                if (!parsedWithTime) {
+                    filterDate = filterDate.startOf('day');
+                }
                 filter = (task: Task) =>
-                    task.dueDate ? task.dueDate.isBefore(filterDate) : false;
+                    task.dueDateTime
+                        ? task.dueDateTime.isBefore(filterDate)
+                        : false;
             } else if (dueMatch[1] === 'after') {
+                if (!parsedWithTime) {
+                    filterDate = filterDate.endOf('day');
+                }
                 filter = (task: Task) =>
-                    task.dueDate ? task.dueDate.isAfter(filterDate) : false;
+                    task.dueDateTime
+                        ? task.dueDateTime.isAfter(filterDate)
+                        : false;
             } else {
-                filter = (task: Task) =>
-                    task.dueDate ? task.dueDate.isSame(filterDate) : false;
+                if (!parsedWithTime) {
+                    filter = (task: Task) =>
+                        task.dueDateTime
+                            ? task.dueDateTime.isSame(filterDate, 'day')
+                            : false;
+                } else {
+                    // use 'minute' granularity to allow for equality with 'now'
+                    filter = (task: Task) =>
+                        task.dueDateTime
+                            ? task.dueDateTime.isSame(filterDate, 'minute')
+                            : false;
+                }
             }
 
             this._filters.push(filter);
@@ -173,21 +203,43 @@ export class Query {
     private parseDoneFilter({ line }: { line: string }): void {
         const doneMatch = line.match(this.doneRegexp);
         if (doneMatch !== null) {
-            const filterDate = this.parseDate(doneMatch[2]);
-            if (!filterDate.isValid()) {
+            const parsedDoneDate = chrono.parse(doneMatch[2])?.[0]?.start;
+            if (!parsedDoneDate) {
                 this._error = 'do not understand done date';
             }
+            const parsedWithTime = parsedDoneDate.isCertain('hour');
+            let filterDate = window.moment(parsedDoneDate.date());
 
             let filter;
             if (doneMatch[1] === 'before') {
+                if (!parsedWithTime) {
+                    filterDate = filterDate.startOf('day');
+                }
                 filter = (task: Task) =>
-                    task.doneDate ? task.doneDate.isBefore(filterDate) : false;
+                    task.doneDateTime
+                        ? task.doneDateTime.isBefore(filterDate)
+                        : false;
             } else if (doneMatch[1] === 'after') {
+                if (!parsedWithTime) {
+                    filterDate = filterDate.endOf('day');
+                }
                 filter = (task: Task) =>
-                    task.doneDate ? task.doneDate.isAfter(filterDate) : false;
+                    task.doneDateTime
+                        ? task.doneDateTime.isAfter(filterDate)
+                        : false;
             } else {
-                filter = (task: Task) =>
-                    task.doneDate ? task.doneDate.isSame(filterDate) : false;
+                if (!parsedWithTime) {
+                    filter = (task: Task) =>
+                        task.doneDateTime
+                            ? task.doneDateTime.isSame(filterDate, 'day')
+                            : false;
+                } else {
+                    // use 'minute' granularity to allow for equality with 'now'
+                    filter = (task: Task) =>
+                        task.doneDateTime
+                            ? task.doneDateTime.isSame(filterDate, 'minute')
+                            : false;
+                }
             }
 
             this._filters.push(filter);
@@ -293,11 +345,6 @@ export class Query {
         } else {
             this._error = 'do not understand query sorting';
         }
-    }
-
-    private parseDate(input: string): moment.Moment {
-        // Using start of date to correctly match on comparison with other dates (like equality).
-        return window.moment(chrono.parseDate(input)).startOf('day');
     }
 
     private stringIncludesCaseInsensitive(
