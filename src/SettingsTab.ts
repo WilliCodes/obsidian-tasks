@@ -1,6 +1,11 @@
 import { PluginSettingTab, Setting } from 'obsidian';
 
-import { getSettings, updateSettings } from './Settings';
+import {
+    getSettings,
+    joinFormatArray,
+    splitFormatArray,
+    updateSettings,
+} from './Settings';
 import type TasksPlugin from './main';
 
 export class SettingsTab extends PluginSettingTab {
@@ -68,7 +73,7 @@ export class SettingsTab extends PluginSettingTab {
         new Setting(containerEl)
             .setName('Add time to completed tasks')
             .setDesc(
-                'In addition to the date, the current time will be added to a task marked as completed.\nFormat: "✅ YYYY-MM-DD HH:mm" ',
+                'When completing a task, append the date and time instead of just the date.',
             )
             .addToggle((toggle) => {
                 const settings = getSettings();
@@ -78,6 +83,102 @@ export class SettingsTab extends PluginSettingTab {
 
                     await this.plugin.saveSettings();
                 });
+            });
+
+        new Setting(containerEl)
+            .setName('Due date signifier')
+            .setDesc(
+                "Signifies the start of the due date. The signifier must not be used in the task's description.",
+            )
+            .addText((text) => {
+                const settings = getSettings();
+
+                text.setPlaceholder('📅')
+                    .setValue(settings.dueDateSignifier)
+                    .onChange(async (value) => {
+                        updateSettings({
+                            dueDateSignifier: value,
+                        });
+
+                        await this.plugin.saveSettings();
+                    });
+            });
+
+        new Setting(containerEl)
+            .setName('Done date signifier')
+            .setDesc(
+                "Signifies the start of the done date. The signifier must not be used in the task's description.",
+            )
+            .addText((text) => {
+                const settings = getSettings();
+
+                text.setPlaceholder('✅')
+                    .setValue(settings.doneDateSignifier)
+                    .onChange(async (value) => {
+                        updateSettings({
+                            doneDateSignifier: value,
+                        });
+
+                        await this.plugin.saveSettings();
+                    });
+            });
+
+        containerEl.createEl('h3', { text: 'Date Time Formats' });
+        containerEl.createEl('p', {
+            text: 'Customize the date and time formats used for parsing and displaying. Escape characters not used for parsing in square brackets, escape square brackets with a backslash (e.g. "\\[\\[YYYY-MM-DD\\]\\] [at] HH:mm")',
+        });
+
+        new Setting(containerEl)
+            .setName('Date formats')
+            .setDesc(
+                'Formats to display dates (without time). Separate additional possible formats with "&&". All formats can be read, while the first format will be used for new tasks.',
+            )
+            .addText((text) => {
+                const settings = getSettings();
+
+                text.setPlaceholder('YYYY-MM-DD')
+                    .setValue(joinFormatArray(settings.dateFormats))
+                    .onChange(async (value) => {
+                        updateSettings({
+                            dateFormats: splitFormatArray(value),
+                        });
+
+                        await this.plugin.saveSettings();
+                    });
+            });
+
+        new Setting(containerEl)
+            .setName('Date and time formats')
+            .setDesc(
+                'Formats to display dates with time. Separate additional possible formats with "&&". All formats can be read, while the first format will be used for new tasks.',
+            )
+            .addText((text) => {
+                const settings = getSettings();
+
+                text.setPlaceholder('YYYY-MM-DD HH:mm')
+                    .setValue(joinFormatArray(settings.dateTimeFormats))
+                    .onChange(async (value) => {
+                        updateSettings({
+                            dateTimeFormats: splitFormatArray(value),
+                        });
+
+                        await this.plugin.saveSettings();
+                    });
+            });
+
+        new Setting(containerEl)
+            .setName('Time format')
+            .setDesc('Format to display times (without date).')
+            .addText((text) => {
+                const settings = getSettings();
+
+                text.setPlaceholder('HH:mm')
+                    .setValue(settings.timeFormat)
+                    .onChange(async (value) => {
+                        updateSettings({ timeFormat: value });
+
+                        await this.plugin.saveSettings();
+                    });
             });
     }
 }

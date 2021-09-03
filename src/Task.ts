@@ -2,7 +2,7 @@ import { Component, MarkdownRenderer } from 'obsidian';
 import { RRule } from 'rrule';
 
 import { replaceTaskWithTasks } from './File';
-import { getSettings } from './Settings';
+import { escapeRegExp, getSettings } from './Settings';
 import { LayoutOptions } from './LayoutOptions';
 import type { Moment } from 'moment';
 
@@ -34,17 +34,7 @@ export class Task {
     /** The blockLink is a "^" annotation after the dates/recurrence rules. */
     public readonly blockLink: string;
 
-    public static readonly dateFormat = 'YYYY-MM-DD';
-    public static readonly timeFormat = 'HH:mm';
-    public static readonly dateTimeFormat =
-        Task.dateFormat + ' ' + Task.timeFormat;
     public static readonly taskRegex = /^([\s\t]*)[-*] +\[(.)\] *(.*)/u;
-    // The following regexes end with `$` because they will be matched and
-    // removed from the end until none are left.
-    public static readonly dueDateTimeRegex =
-        /[📅📆🗓] ?(\d{4}-\d{2}-\d{2} ?(\d{2}:\d{2})?)$/u;
-    public static readonly doneDateTimeRegex =
-        /✅ ?(\d{4}-\d{2}-\d{2} ?(\d{2}:\d{2})?)$/u;
     public static readonly recurrenceRegex = /🔁([a-zA-Z0-9, !]+)$/u;
     public static readonly blockLinkRegex = / \^[a-zA-Z0-9-]+$/u;
 
@@ -142,6 +132,22 @@ export class Task {
             description = description.replace(this.blockLinkRegex, '').trim();
         }
 
+        const {
+            dueDateSignifier,
+            doneDateSignifier,
+            dateTimeFormats,
+            dateFormats,
+        } = getSettings();
+
+        const dueDateTimeRegex = RegExp(
+            escapeRegExp(dueDateSignifier) + ' ?(.+)$',
+            'u',
+        );
+        const doneDateTimeRegex = RegExp(
+            escapeRegExp(doneDateSignifier) + ' ?(.+)$',
+            'u',
+        );
+
         // Keep matching and removing special strings from the end of the
         // description in any order. The loop should only run once if the
         // strings are in the expected order after the description.
@@ -156,43 +162,56 @@ export class Task {
         let runs = 0;
         do {
             matched = false;
-            const doneDateTimeMatch = description.match(Task.doneDateTimeRegex);
+
+            const doneDateTimeMatch = description.match(doneDateTimeRegex);
             if (doneDateTimeMatch !== null) {
-                if (doneDateTimeMatch[2]) {
-                    doneDateTime = window.moment(
-                        doneDateTimeMatch[1],
-                        Task.dateTimeFormat,
-                    );
-                    hasDoneTime = true;
+                const parsed = window.moment(
+                    doneDateTimeMatch[1],
+                    [...dateTimeFormats, ...dateFormats],
+                    true,
+                );
+                if (parsed.isValid()) {
+                    doneDateTime = parsed;
+                    if (
+                        dateTimeFormats.includes(
+                            parsed.creationData().format!.toString(),
+                        )
+                    ) {
+                        hasDoneTime = true;
+                    } else {
+                        // make sure no implied time is used which would mess with comparisons
+                        doneDateTime.set({ hour: 0, minute: 0 });
+                    }
                 } else {
-                    doneDateTime = window.moment(
-                        doneDateTimeMatch[1],
-                        Task.dateFormat,
-                    );
+                    console.warn('Could not parse done date');
                 }
-                description = description
-                    .replace(Task.doneDateTimeRegex, '')
-                    .trim();
+                description = description.replace(doneDateTimeRegex, '').trim();
                 matched = true;
             }
 
-            const dueDateTimeMatch = description.match(Task.dueDateTimeRegex);
+            const dueDateTimeMatch = description.match(dueDateTimeRegex);
             if (dueDateTimeMatch !== null) {
-                if (dueDateTimeMatch[2]) {
-                    dueDateTime = window.moment(
-                        dueDateTimeMatch[1],
-                        Task.dateTimeFormat,
-                    );
-                    hasDueTime = true;
+                const parsed = window.moment(
+                    dueDateTimeMatch[1],
+                    [...dateTimeFormats, ...dateFormats],
+                    true,
+                );
+                if (parsed.isValid()) {
+                    dueDateTime = parsed;
+                    if (
+                        dateTimeFormats.includes(
+                            parsed.creationData().format!.toString(),
+                        )
+                    ) {
+                        hasDueTime = true;
+                    } else {
+                        // make sure no implied time is used which would mess with comparisons
+                        dueDateTime.set({ hour: 0, minute: 0 });
+                    }
                 } else {
-                    dueDateTime = window.moment(
-                        dueDateTimeMatch[1],
-                        Task.dateFormat,
-                    );
+                    console.warn('Could not parse due date');
                 }
-                description = description
-                    .replace(Task.dueDateTimeRegex, '')
-                    .trim();
+                description = description.replace(dueDateTimeRegex, '').trim();
                 matched = true;
             }
 
@@ -314,6 +333,13 @@ export class Task {
 
     public toString(layoutOptions?: LayoutOptions): string {
         layoutOptions = layoutOptions ?? new LayoutOptions();
+        const {
+            dateTimeFormats,
+            timeFormat,
+            dateFormats,
+            dueDateSignifier,
+            doneDateSignifier,
+        } = getSettings();
         let taskString = this.description;
 
         if (!layoutOptions.hideRecurrenceRule) {
@@ -323,34 +349,44 @@ export class Task {
             taskString += recurrenceRule;
         }
 
-        if (!layoutOptions.hideDueDate) {
-            const dueDate: string = this.dueDateTime
-                ? ` 📅 ${this.dueDateTime.format(Task.dateFormat)}`
-                : '';
-            taskString += dueDate;
+        if (this.dueDateTime) {
+            if (
+                !layoutOptions.hideDueDate &&
+                !layoutOptions.hideDueTime &&
+                this.hasDueTime
+            ) {
+                taskString += ` ${dueDateSignifier} ${this.dueDateTime.format(
+                    dateTimeFormats[0],
+                )}`;
+            } else if (!layoutOptions.hideDueDate) {
+                taskString += ` ${dueDateSignifier} ${this.dueDateTime.format(
+                    dateFormats[0],
+                )}`;
+            } else if (!layoutOptions.hideDueTime && this.hasDueTime) {
+                taskString += ` ${dueDateSignifier} ${this.dueDateTime.format(
+                    timeFormat,
+                )}`;
+            }
         }
 
-        if (!layoutOptions.hideDueTime) {
-            const dueTime: string =
-                this.hasDueTime && this.dueDateTime
-                    ? ` ${this.dueDateTime.format(Task.timeFormat)}`
-                    : '';
-            taskString += dueTime;
-        }
-
-        if (!layoutOptions.hideDoneDate) {
-            const doneDate: string = this.doneDateTime
-                ? ` ✅ ${this.doneDateTime.format(Task.dateFormat)}`
-                : '';
-            taskString += doneDate;
-        }
-
-        if (!layoutOptions.hideDoneTime) {
-            const doneTime: string =
-                this.hasDoneTime && this.doneDateTime
-                    ? ` ${this.doneDateTime.format(Task.timeFormat)}`
-                    : '';
-            taskString += doneTime;
+        if (this.doneDateTime) {
+            if (
+                !layoutOptions.hideDoneDate &&
+                !layoutOptions.hideDoneTime &&
+                this.hasDoneTime
+            ) {
+                taskString += ` ${doneDateSignifier} ${this.doneDateTime.format(
+                    dateTimeFormats[0],
+                )}`;
+            } else if (!layoutOptions.hideDoneDate) {
+                taskString += ` ${doneDateSignifier} ${this.doneDateTime.format(
+                    dateFormats[0],
+                )}`;
+            } else if (!layoutOptions.hideDoneTime && this.hasDoneTime) {
+                taskString += ` ${doneDateSignifier} ${this.doneDateTime.format(
+                    timeFormat,
+                )}`;
+            }
         }
 
         return taskString;

@@ -28,22 +28,10 @@
     let parsedRRule: string = '';
     let parsedDoneDateTime: string = '';
 
+    const { dateTimeFormats, dateFormats } = getSettings();
+
     $: {
-        if (!editableTask.dueDateTime) {
-            parsedDueDateTime = '<i>no due date</>'
-        } else {
-            const parsed = chrono.parse(editableTask.dueDateTime, new Date(), { forwardDate: true });
-            if (parsed !== null && parsed.length > 0) {
-                const result = parsed[0].start;
-                if (result.isCertain('hour')) {
-                    parsedDueDateTime = window.moment(result.date()).format(Task.dateTimeFormat);
-                } else {
-                    parsedDueDateTime = window.moment(result.date()).format(Task.dateFormat);
-                }
-            } else {
-                parsedDueDateTime = '<i>invalid due date</i>'
-            }
-        }
+        parsedDueDateTime = parseDateTimeToString(editableTask.dueDateTime);
     }
 
     $: {
@@ -59,42 +47,53 @@
     }
 
     $: {
-        if (!editableTask.doneDateTime) {
-            parsedDoneDateTime = '<i>no done date</i>'
-        } else {
-            const parsed = chrono.parse(editableTask.doneDateTime);
-            if (parsed !== null && parsed.length > 0) {
-                const result = parsed[0].start;
-                if (result.isCertain('hour')) {
-                    parsedDoneDateTime = window.moment(result.date()).format(Task.dateTimeFormat);
-                } else {
-                    parsedDoneDateTime = window.moment(result.date()).format(Task.dateFormat);
-                }
-            } else {
-                parsedDoneDateTime = '<i>invalid done date</i>'
-            }
+        parsedDoneDateTime = parseDateTimeToString(editableTask.doneDateTime);
+    }
+
+    const parseDateTimeToString = (input: string): string => {
+        if (!input) {
+            return '<i>no done date</>';
         }
+
+        const parsed = window.moment(input, [...dateTimeFormats, ...dateFormats], true);
+        if (parsed.isValid()) {
+            // input could be directly parsed in strict mode
+            return input;
+        }
+
+        // try to parse other formats or natural language
+        const parsed_nl = chrono.parse(input, new Date(), { forwardDate: true });
+        if (parsed_nl !== null && parsed_nl.length > 0) {
+                const result = parsed_nl[0].start;
+                if (result.isCertain('hour')) {
+                    return window.moment(result.date()).format(dateTimeFormats[0]);
+                } else {
+                    return window.moment(result.date()).format(dateFormats[0]);
+                }
+        }
+
+        return '<i>invalid done date</i>';
     }
 
     onMount(() => {
-        const { globalFilter } = getSettings();
+        const { globalFilter, dateTimeFormats, dateFormats } = getSettings();
         const description = task.description.replace(globalFilter, '').replace('  ', ' ').trim();
 
         let dueDateTime: string = '';
         let doneDateTime: string = '';
         if (task.dueDateTime) {
             if (task.hasDueTime) {
-                dueDateTime = task.dueDateTime.format(Task.dateTimeFormat);
+                dueDateTime = task.dueDateTime.format(dateTimeFormats[0]);
             } else {
-                dueDateTime = task.dueDateTime.format(Task.dateFormat);
+                dueDateTime = task.dueDateTime.format(dateFormats[0]);
             }
         }
 
         if (task.doneDateTime) {
             if (task.hasDoneTime) {
-                doneDateTime = task.doneDateTime.format(Task.dateTimeFormat);
+                doneDateTime = task.doneDateTime.format(dateTimeFormats[0]);
             } else {
-                doneDateTime = task.doneDateTime.format(Task.dateFormat);
+                doneDateTime = task.doneDateTime.format(dateFormats[0]);
             }
         }
 
@@ -124,28 +123,30 @@
 
         let dueDateTime: moment.Moment | null = null;
         let hasDueTime: boolean = false; 
-        const parsedDue = chrono.parse(editableTask.dueDateTime);
-        if (parsedDue !== null && parsedDue.length > 0) {
-            const result = parsedDue[0].start;
-            if (result.isCertain('hour')) {
-                dueDateTime = window.moment(result.date());
-                hasDueTime = true;
-            } else {
-                dueDateTime = window.moment(result.date()).startOf('day');
-            }
+
+        dueDateTime = window.moment(parsedDueDateTime, [...dateTimeFormats, ...dateFormats], true);
+        if (dueDateTime.isValid()) {
+            if (dateTimeFormats.includes(dueDateTime.creationData().format!.toString())) {
+                        hasDueTime = true;
+                    } else {
+                        dueDateTime = dueDateTime.startOf('day');
+                    }
+        } else {
+            dueDateTime = null;
         }
 
         let doneDateTime: moment.Moment | null = null;
         let hasDoneTime: boolean = false; 
-        const parsedDone = chrono.parse(editableTask.doneDateTime);
-        if (parsedDone !== null && parsedDone.length > 0) {
-            const result = parsedDone[0].start;
-            if (result.isCertain('hour')) {
-                doneDateTime = window.moment(result.date());
-                hasDoneTime = true;
-            } else {
-                doneDateTime = window.moment(result.date()).startOf('day');
-            }
+        
+        doneDateTime = window.moment(parsedDoneDateTime, [...dateTimeFormats, ...dateFormats], true);
+        if (doneDateTime.isValid()) {
+            if (dateTimeFormats.includes(doneDateTime.creationData().format!.toString())) {
+                        hasDoneTime = true;
+                    } else {
+                        doneDateTime = doneDateTime.startOf('day');
+                    }
+        } else {
+            doneDateTime = null;
         }
 
         const updatedTask = new Task({
