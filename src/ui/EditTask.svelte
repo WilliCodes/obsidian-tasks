@@ -28,7 +28,7 @@
     let parsedRRule: string = '';
     let parsedDoneDateTime: string = '';
 
-    const { dateTimeFormats, dateFormats } = getSettings();
+    const { dateTimeFormats, dateFormats, dueDateSignifiers, recurrenceSignifiers } = getSettings();
 
     $: {
         parsedDueDateTime = parseDateTimeToString(editableTask.dueDateTime);
@@ -174,13 +174,13 @@
         <div class="tasks-modal-section">
             <label for="due">Due</label>
             <input bind:value={editableTask.dueDateTime} id="due" type="text" placeholder="Try 'Monday' or 'tomorrow at 5pm'." />
-            <code>📅 {@html parsedDueDateTime}</code>
+            <code>{@html dueDateSignifiers[0]} {@html parsedDueDateTime}</code>
         </div>
         <hr />
         <div class="tasks-modal-section">
             <label for="recurrence">Recurrence</label>
             <input bind:value={editableTask.recurrenceRule} id="description" type="text" placeholder="Try 'every 2 weeks on Thursday'." />
-            <code>🔁 {@html parsedRRule }</code>
+            <code>{@html recurrenceSignifiers[0]} {@html parsedRRule }</code>
         </div>
         <hr />
         <div class="tasks-modal-section">

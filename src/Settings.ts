@@ -5,19 +5,21 @@ export interface Settings {
     dateFormats: string[];
     timeFormat: string;
     dateTimeFormats: string[];
-    dueDateSignifier: string;
-    doneDateSignifier: string;
+    dueDateSignifiers: string[];
+    doneDateSignifiers: string[];
+    recurrenceSignifiers: string[];
 }
 
 const defaultSettings: Settings = {
     globalFilter: '',
     removeGlobalFilter: false,
     doneTime: false,
-    dateFormats: ['YYYY-MM-DD'],
+    dateFormats: ['YYYY-MM-DD', '\\[\\[YYYY-MM-DD\\]\\]'],
     timeFormat: 'HH:mm',
-    dateTimeFormats: ['YYYY-MM-DD HH:mm'],
-    dueDateSignifier: '🗓',
-    doneDateSignifier: '✅',
+    dateTimeFormats: ['YYYY-MM-DD HH:mm', '\\[\\[YYYY-MM-DD\\]\\] HH:mm'],
+    dueDateSignifiers: ['🗓', '📅', '📆'],
+    doneDateSignifiers: ['✅'],
+    recurrenceSignifiers: ['🔁'],
 };
 
 let settings: Settings = { ...defaultSettings };
@@ -32,11 +34,11 @@ export const updateSettings = (newSettings: Partial<Settings>): Settings => {
     return getSettings();
 };
 
-export const splitFormatArray = (input: string): string[] => {
+export const splitInputArray = (input: string): string[] => {
     return input.split('&&').map((format: string) => format.trim());
 };
 
-export const joinFormatArray = (input: string[]): string => {
+export const joinInputArray = (input: string[]): string => {
     return input.join(' && ');
 };
 

@@ -2,8 +2,8 @@ import { PluginSettingTab, Setting } from 'obsidian';
 
 import {
     getSettings,
-    joinFormatArray,
-    splitFormatArray,
+    joinInputArray,
+    splitInputArray,
     updateSettings,
 } from './Settings';
 import type TasksPlugin from './main';
@@ -86,18 +86,18 @@ export class SettingsTab extends PluginSettingTab {
             });
 
         new Setting(containerEl)
-            .setName('Due date signifier')
+            .setName('Due date signifiers')
             .setDesc(
-                "Signifies the start of the due date. The signifier must not be used in the task's description.",
+                'Signifies the start of the due date. The signifiers must not be used in the task\'s description. Separate additional possible signifiers with "&&". All signifiers can be read, while the first will be used for new tasks.',
             )
             .addText((text) => {
                 const settings = getSettings();
 
                 text.setPlaceholder('📅')
-                    .setValue(settings.dueDateSignifier)
+                    .setValue(joinInputArray(settings.dueDateSignifiers))
                     .onChange(async (value) => {
                         updateSettings({
-                            dueDateSignifier: value,
+                            dueDateSignifiers: splitInputArray(value),
                         });
 
                         await this.plugin.saveSettings();
@@ -105,18 +105,37 @@ export class SettingsTab extends PluginSettingTab {
             });
 
         new Setting(containerEl)
-            .setName('Done date signifier')
+            .setName('Done date signifiers')
             .setDesc(
-                "Signifies the start of the done date. The signifier must not be used in the task's description.",
+                'Signifies the start of the done date. The signifiers must not be used in the task\'s description. Separate additional possible signifiers with "&&". All signifiers can be read, while the first will be used for new tasks.',
             )
             .addText((text) => {
                 const settings = getSettings();
 
                 text.setPlaceholder('✅')
-                    .setValue(settings.doneDateSignifier)
+                    .setValue(joinInputArray(settings.doneDateSignifiers))
                     .onChange(async (value) => {
                         updateSettings({
-                            doneDateSignifier: value,
+                            doneDateSignifiers: splitInputArray(value),
+                        });
+
+                        await this.plugin.saveSettings();
+                    });
+            });
+
+        new Setting(containerEl)
+            .setName('Recurrence signifiers')
+            .setDesc(
+                'Signifies the rule for recurring tasks. The signifiers must not be used in the task\'s description. Separate additional possible signifiers with "&&". All signifiers can be read, while the first will be used for new tasks.',
+            )
+            .addText((text) => {
+                const settings = getSettings();
+
+                text.setPlaceholder('🔁')
+                    .setValue(joinInputArray(settings.recurrenceSignifiers))
+                    .onChange(async (value) => {
+                        updateSettings({
+                            recurrenceSignifiers: splitInputArray(value),
                         });
 
                         await this.plugin.saveSettings();
@@ -137,10 +156,10 @@ export class SettingsTab extends PluginSettingTab {
                 const settings = getSettings();
 
                 text.setPlaceholder('YYYY-MM-DD')
-                    .setValue(joinFormatArray(settings.dateFormats))
+                    .setValue(joinInputArray(settings.dateFormats))
                     .onChange(async (value) => {
                         updateSettings({
-                            dateFormats: splitFormatArray(value),
+                            dateFormats: splitInputArray(value),
                         });
 
                         await this.plugin.saveSettings();
@@ -156,10 +175,10 @@ export class SettingsTab extends PluginSettingTab {
                 const settings = getSettings();
 
                 text.setPlaceholder('YYYY-MM-DD HH:mm')
-                    .setValue(joinFormatArray(settings.dateTimeFormats))
+                    .setValue(joinInputArray(settings.dateTimeFormats))
                     .onChange(async (value) => {
                         updateSettings({
-                            dateTimeFormats: splitFormatArray(value),
+                            dateTimeFormats: splitInputArray(value),
                         });
 
                         await this.plugin.saveSettings();

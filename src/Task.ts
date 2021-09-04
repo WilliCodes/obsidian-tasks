@@ -35,7 +35,6 @@ export class Task {
     public readonly blockLink: string;
 
     public static readonly taskRegex = /^([\s\t]*)[-*] +\[(.)\] *(.*)/u;
-    public static readonly recurrenceRegex = /🔁([a-zA-Z0-9, !]+)$/u;
     public static readonly blockLinkRegex = / \^[a-zA-Z0-9-]+$/u;
 
     constructor({
@@ -133,18 +132,33 @@ export class Task {
         }
 
         const {
-            dueDateSignifier,
-            doneDateSignifier,
+            dueDateSignifiers,
+            doneDateSignifiers,
+            recurrenceSignifiers: recurringSignifiers,
             dateTimeFormats,
             dateFormats,
         } = getSettings();
 
-        const dueDateTimeRegex = RegExp(
-            escapeRegExp(dueDateSignifier) + ' ?(.+)$',
+        const allDueDateSignifiers =
+            '(?:' +
+            dueDateSignifiers.map((s) => escapeRegExp(s)).join('|') +
+            ')';
+        const allDoneDateSignifiers =
+            '(?:' +
+            doneDateSignifiers.map((s) => escapeRegExp(s)).join('|') +
+            ')';
+        const allRecurringSignifiers =
+            '(?:' +
+            recurringSignifiers.map((s) => escapeRegExp(s)).join('|') +
+            ')';
+
+        const dueDateTimeRegex = RegExp(allDueDateSignifiers + ' ?(.+)$', 'u');
+        const doneDateTimeRegex = RegExp(
+            allDoneDateSignifiers + ' ?(.+)$',
             'u',
         );
-        const doneDateTimeRegex = RegExp(
-            escapeRegExp(doneDateSignifier) + ' ?(.+)$',
+        const recurrenceRegex = RegExp(
+            allRecurringSignifiers + '([a-zA-Z0-9, !]+)$',
             'u',
         );
 
@@ -215,7 +229,7 @@ export class Task {
                 matched = true;
             }
 
-            const recurrenceMatch = description.match(Task.recurrenceRegex);
+            const recurrenceMatch = description.match(recurrenceRegex);
             if (recurrenceMatch !== null) {
                 try {
                     recurrenceRule = RRule.fromText(recurrenceMatch[1].trim());
@@ -223,9 +237,7 @@ export class Task {
                     // Could not read recurrence rule. User possibly not done typing.
                 }
 
-                description = description
-                    .replace(Task.recurrenceRegex, '')
-                    .trim();
+                description = description.replace(recurrenceRegex, '').trim();
                 matched = true;
             }
 
@@ -337,14 +349,15 @@ export class Task {
             dateTimeFormats,
             timeFormat,
             dateFormats,
-            dueDateSignifier,
-            doneDateSignifier,
+            dueDateSignifiers,
+            doneDateSignifiers,
+            recurrenceSignifiers,
         } = getSettings();
         let taskString = this.description;
 
         if (!layoutOptions.hideRecurrenceRule) {
             const recurrenceRule: string = this.recurrenceRule
-                ? ` 🔁 ${this.recurrenceRule.toText()}`
+                ? ` ${recurrenceSignifiers[0]} ${this.recurrenceRule.toText()}`
                 : '';
             taskString += recurrenceRule;
         }
@@ -355,17 +368,17 @@ export class Task {
                 !layoutOptions.hideDueTime &&
                 this.hasDueTime
             ) {
-                taskString += ` ${dueDateSignifier} ${this.dueDateTime.format(
-                    dateTimeFormats[0],
-                )}`;
+                taskString += ` ${
+                    dueDateSignifiers[0]
+                } ${this.dueDateTime.format(dateTimeFormats[0])}`;
             } else if (!layoutOptions.hideDueDate) {
-                taskString += ` ${dueDateSignifier} ${this.dueDateTime.format(
-                    dateFormats[0],
-                )}`;
+                taskString += ` ${
+                    dueDateSignifiers[0]
+                } ${this.dueDateTime.format(dateFormats[0])}`;
             } else if (!layoutOptions.hideDueTime && this.hasDueTime) {
-                taskString += ` ${dueDateSignifier} ${this.dueDateTime.format(
-                    timeFormat,
-                )}`;
+                taskString += ` ${
+                    dueDateSignifiers[0]
+                } ${this.dueDateTime.format(timeFormat)}`;
             }
         }
 
@@ -375,17 +388,17 @@ export class Task {
                 !layoutOptions.hideDoneTime &&
                 this.hasDoneTime
             ) {
-                taskString += ` ${doneDateSignifier} ${this.doneDateTime.format(
-                    dateTimeFormats[0],
-                )}`;
+                taskString += ` ${
+                    doneDateSignifiers[0]
+                } ${this.doneDateTime.format(dateTimeFormats[0])}`;
             } else if (!layoutOptions.hideDoneDate) {
-                taskString += ` ${doneDateSignifier} ${this.doneDateTime.format(
-                    dateFormats[0],
-                )}`;
+                taskString += ` ${
+                    doneDateSignifiers[0]
+                } ${this.doneDateTime.format(dateFormats[0])}`;
             } else if (!layoutOptions.hideDoneTime && this.hasDoneTime) {
-                taskString += ` ${doneDateSignifier} ${this.doneDateTime.format(
-                    timeFormat,
-                )}`;
+                taskString += ` ${
+                    doneDateSignifiers[0]
+                } ${this.doneDateTime.format(timeFormat)}`;
             }
         }
 
