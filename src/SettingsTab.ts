@@ -1,6 +1,7 @@
 import { PluginSettingTab, Setting } from 'obsidian';
 
 import {
+    defaultSettings,
     getSettings,
     joinInputArray,
     splitInputArray,
@@ -70,26 +71,18 @@ export class SettingsTab extends PluginSettingTab {
                     });
             });
 
-        new Setting(containerEl)
-            .setName('Add time to completed tasks')
-            .setDesc(
-                'When completing a task, append the date and time instead of just the date.',
-            )
-            .addToggle((toggle) => {
-                const settings = getSettings();
-
-                toggle.setValue(settings.doneTime).onChange(async (value) => {
-                    updateSettings({ doneTime: value });
-
-                    await this.plugin.saveSettings();
-                });
-            });
+        containerEl.createEl('h3', { text: 'Signifiers' });
+        containerEl.createEl('p', {
+            text:
+                'Signifiers indicate the start of a due date, done date or recurrence rule. ' +
+                'Multiple signifiers can be seperated by "&&". ' +
+                'All supplied signifiers can be parsed, while the first will be used for new tasks. ' +
+                "Signifiers must not be included in the task's description.",
+        });
 
         new Setting(containerEl)
             .setName('Due date signifiers')
-            .setDesc(
-                'Signifies the start of the due date. The signifiers must not be used in the task\'s description. Separate additional possible signifiers with "&&". All signifiers can be read, while the first will be used for new tasks.',
-            )
+            .setDesc('Signifies the start of the due date.')
             .addText((text) => {
                 const settings = getSettings();
 
@@ -106,9 +99,7 @@ export class SettingsTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Done date signifiers')
-            .setDesc(
-                'Signifies the start of the done date. The signifiers must not be used in the task\'s description. Separate additional possible signifiers with "&&". All signifiers can be read, while the first will be used for new tasks.',
-            )
+            .setDesc('Signifies the start of the done date.')
             .addText((text) => {
                 const settings = getSettings();
 
@@ -125,9 +116,7 @@ export class SettingsTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Recurrence signifiers')
-            .setDesc(
-                'Signifies the rule for recurring tasks. The signifiers must not be used in the task\'s description. Separate additional possible signifiers with "&&". All signifiers can be read, while the first will be used for new tasks.',
-            )
+            .setDesc('Signifies the rule for recurring tasks.')
             .addText((text) => {
                 const settings = getSettings();
 
@@ -147,57 +136,147 @@ export class SettingsTab extends PluginSettingTab {
             text: 'Customize the date and time formats used for parsing and displaying. Escape characters not used for parsing in square brackets, escape square brackets with a backslash (e.g. "\\[\\[YYYY-MM-DD\\]\\] [at] HH:mm")',
         });
 
+        // Description including live example of date formats
+        const dateFormatsDescription = document.createDocumentFragment();
+        dateFormatsDescription.appendText(
+            'Formats to display dates (without time).\n' +
+                'Separate additional possible formats with "&&". All formats can be read, while the first format will be used for new tasks.\n' +
+                'Current Formats: ',
+        );
+        const liveDateFormats = () =>
+            getSettings()
+                .dateFormats.map((format) => window.moment().format(format))
+                .join(', ');
+        const liveDateFormatsId = 'dateFormatsExample';
+        dateFormatsDescription.createSpan(undefined, (el) => {
+            el.id = liveDateFormatsId;
+            el.addClass('tasks-setting-format-preview');
+            el.innerHTML = liveDateFormats();
+        });
+
         new Setting(containerEl)
             .setName('Date formats')
-            .setDesc(
-                'Formats to display dates (without time). Separate additional possible formats with "&&". All formats can be read, while the first format will be used for new tasks.',
-            )
+            .setDesc(dateFormatsDescription)
             .addText((text) => {
                 const settings = getSettings();
 
-                text.setPlaceholder('YYYY-MM-DD')
+                text.setPlaceholder(joinInputArray(defaultSettings.dateFormats))
                     .setValue(joinInputArray(settings.dateFormats))
                     .onChange(async (value) => {
                         updateSettings({
-                            dateFormats: splitInputArray(value),
+                            dateFormats: value
+                                ? splitInputArray(value)
+                                : defaultSettings.dateFormats,
                         });
+                        const example =
+                            document.getElementById(liveDateFormatsId);
+                        if (example) {
+                            example.innerHTML = liveDateFormats();
+                        }
 
                         await this.plugin.saveSettings();
                     });
             });
+
+        // Description including live example of date + time formats
+        const dateTimeFormatsDescription = document.createDocumentFragment();
+        dateTimeFormatsDescription.appendText(
+            'Formats to display dates with time.\n' +
+                'Separate additional possible formats with "&&". All formats can be read, while the first format will be used for new tasks.\n' +
+                'Current Formats: ',
+        );
+        const liveDateTimeFormats = () =>
+            getSettings()
+                .dateTimeFormats.map((format) => window.moment().format(format))
+                .join(', ');
+        const liveDateTimeFormatsId = 'dateTimeFormatsExample';
+        dateTimeFormatsDescription.createSpan(undefined, (el) => {
+            el.id = liveDateTimeFormatsId;
+            el.addClass('tasks-setting-format-preview');
+            el.innerHTML = liveDateTimeFormats();
+        });
 
         new Setting(containerEl)
             .setName('Date and time formats')
-            .setDesc(
-                'Formats to display dates with time. Separate additional possible formats with "&&". All formats can be read, while the first format will be used for new tasks.',
-            )
+            .setDesc(dateTimeFormatsDescription)
             .addText((text) => {
                 const settings = getSettings();
 
-                text.setPlaceholder('YYYY-MM-DD HH:mm')
+                text.setPlaceholder(
+                    joinInputArray(defaultSettings.dateTimeFormats),
+                )
                     .setValue(joinInputArray(settings.dateTimeFormats))
                     .onChange(async (value) => {
                         updateSettings({
-                            dateTimeFormats: splitInputArray(value),
+                            dateTimeFormats: value
+                                ? splitInputArray(value)
+                                : defaultSettings.dateTimeFormats,
                         });
+                        const example = document.getElementById(
+                            liveDateTimeFormatsId,
+                        );
+                        if (example) {
+                            example.innerHTML = liveDateTimeFormats();
+                        }
+
+                        await this.plugin.saveSettings();
+                    });
+            });
+
+        // Description including live example of the time format
+        const timeFormatDescription = document.createDocumentFragment();
+        timeFormatDescription.appendText(
+            'Format to display times (without date).\n' + 'Current Format: ',
+        );
+        const liveTimeFormat = () =>
+            window.moment().format(getSettings().timeFormat);
+        const liveTimeFormatId = 'timeFormatExample';
+        timeFormatDescription.createSpan(
+            'tasks-setting-format-preview',
+            (el) => {
+                el.id = liveTimeFormatId;
+                el.addClass('tasks-setting-format-preview');
+                el.innerHTML = liveTimeFormat();
+            },
+        );
+
+        new Setting(containerEl)
+            .setName('Time format')
+            .setDesc(timeFormatDescription)
+            .addText((text) => {
+                const settings = getSettings();
+
+                text.setPlaceholder(defaultSettings.timeFormat)
+                    .setValue(settings.timeFormat)
+                    .onChange(async (value) => {
+                        updateSettings({
+                            timeFormat: value
+                                ? value
+                                : defaultSettings.timeFormat,
+                        });
+                        const example =
+                            document.getElementById(liveTimeFormatId);
+                        if (example) {
+                            example.innerHTML = liveTimeFormat();
+                        }
 
                         await this.plugin.saveSettings();
                     });
             });
 
         new Setting(containerEl)
-            .setName('Time format')
-            .setDesc('Format to display times (without date).')
-            .addText((text) => {
+            .setName('Add time to completed tasks')
+            .setDesc(
+                'When completing a task, append the date and time instead of just the date.',
+            )
+            .addToggle((toggle) => {
                 const settings = getSettings();
 
-                text.setPlaceholder('HH:mm')
-                    .setValue(settings.timeFormat)
-                    .onChange(async (value) => {
-                        updateSettings({ timeFormat: value });
+                toggle.setValue(settings.doneTime).onChange(async (value) => {
+                    updateSettings({ doneTime: value });
 
-                        await this.plugin.saveSettings();
-                    });
+                    await this.plugin.saveSettings();
+                });
             });
     }
 }

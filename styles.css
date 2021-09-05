@@ -21,6 +21,10 @@
     font-weight: bold;
 }
 
+.tasks-setting-format-preview {
+    font-weight: bold;
+}
+
 .tasks-modal label {
     display: block;
     margin: 5px 0 5px 0;

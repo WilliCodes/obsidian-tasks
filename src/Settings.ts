@@ -10,7 +10,7 @@ export interface Settings {
     recurrenceSignifiers: string[];
 }
 
-const defaultSettings: Settings = {
+export const defaultSettings: Settings = {
     globalFilter: '',
     removeGlobalFilter: false,
     doneTime: false,
