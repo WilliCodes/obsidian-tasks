@@ -100,3 +100,37 @@ it('parses a task with times', () => {
     expect(task!.hasDoneTime).toStrictEqual(true);
     expect(task!.blockLink).toEqual(' ^my-precious');
 })
+
+it('parses a task with different order of due/done', () => {
+    // Arrange
+    const line = '- [x] this is a done task ✅ 2021-06-20 22:22 🗓 2021-09-12 12:34 ^my-precious  ';
+    const path = 'this/is a path/to a/file.md';
+    const sectionStart = 1337;
+    const sectionIndex = 1209;
+    const precedingHeader = 'Eloquent Section';
+
+    // Act
+    const task = Task.fromLine({
+        line,
+        path,
+        sectionStart,
+        sectionIndex,
+        precedingHeader,
+    });
+
+    // Assert
+    expect(task).not.toBeNull();
+    expect(task!.description).toEqual('this is a done task');
+    expect(task!.status).toStrictEqual(Status.Done);
+    expect(task!.dueDateTime).not.toBeNull();
+    expect(
+        task!.dueDateTime!.isSame(moment('2021-09-12 12:34', 'YYYY-MM-DD HH:mm')),
+    ).toStrictEqual(true);
+    expect(task!.hasDueTime).toStrictEqual(true);
+    expect(task!.doneDateTime).not.toBeNull();
+    expect(
+        task!.doneDateTime!.isSame(moment('2021-06-20 22:22', 'YYYY-MM-DD HH:mm')),
+    ).toStrictEqual(true);
+    expect(task!.hasDoneTime).toStrictEqual(true);
+    expect(task!.blockLink).toEqual(' ^my-precious');
+})

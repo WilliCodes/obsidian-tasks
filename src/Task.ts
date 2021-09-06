@@ -139,6 +139,7 @@ export class Task {
             dateFormats,
         } = getSettings();
 
+        // build regular expressions for matching all due/done/recurrence signifiers
         const allDueDateSignifiers =
             '(?:' +
             dueDateSignifiers.map((s) => escapeRegExp(s)).join('|') +
@@ -152,11 +153,14 @@ export class Task {
             recurringSignifiers.map((s) => escapeRegExp(s)).join('|') +
             ')';
 
+        // since we don't know the correct regular expression for the used dateTime formats,
+        // we always use the rest of the string
         const dueDateTimeRegex = RegExp(allDueDateSignifiers + ' ?(.+)$', 'u');
         const doneDateTimeRegex = RegExp(
             allDoneDateSignifiers + ' ?(.+)$',
             'u',
         );
+
         const recurrenceRegex = RegExp(
             allRecurringSignifiers + '([a-zA-Z0-9, !]+)$',
             'u',
@@ -185,6 +189,11 @@ export class Task {
                     true,
                 );
                 if (parsed.isValid()) {
+                    // only 'use up' part of the description if it could be parsed succesfully
+                    description = description
+                        .replace(doneDateTimeRegex, '')
+                        .trim();
+                    matched = true;
                     doneDateTime = parsed;
                     if (
                         dateTimeFormats.includes(
@@ -199,8 +208,6 @@ export class Task {
                 } else {
                     console.warn('Could not parse done date');
                 }
-                description = description.replace(doneDateTimeRegex, '').trim();
-                matched = true;
             }
 
             const dueDateTimeMatch = description.match(dueDateTimeRegex);
@@ -211,6 +218,11 @@ export class Task {
                     true,
                 );
                 if (parsed.isValid()) {
+                    // only 'use up' part of the description if it could be parsed succesfully
+                    description = description
+                        .replace(dueDateTimeRegex, '')
+                        .trim();
+                    matched = true;
                     dueDateTime = parsed;
                     if (
                         dateTimeFormats.includes(
@@ -225,20 +237,20 @@ export class Task {
                 } else {
                     console.warn('Could not parse due date');
                 }
-                description = description.replace(dueDateTimeRegex, '').trim();
-                matched = true;
             }
 
             const recurrenceMatch = description.match(recurrenceRegex);
             if (recurrenceMatch !== null) {
                 try {
                     recurrenceRule = RRule.fromText(recurrenceMatch[1].trim());
+                    // only 'use up' part of the description if it could be parsed succesfully
+                    description = description
+                        .replace(recurrenceRegex, '')
+                        .trim();
+                    matched = true;
                 } catch (error) {
                     // Could not read recurrence rule. User possibly not done typing.
                 }
-
-                description = description.replace(recurrenceRegex, '').trim();
-                matched = true;
             }
 
             runs++;
@@ -368,14 +380,17 @@ export class Task {
                 !layoutOptions.hideDueTime &&
                 this.hasDueTime
             ) {
+                // nothing is hidden, task has time -> append date and time
                 taskString += ` ${
                     dueDateSignifiers[0]
                 } ${this.dueDateTime.format(dateTimeFormats[0])}`;
             } else if (!layoutOptions.hideDueDate) {
+                // either time is hidden or no time present -> append date only
                 taskString += ` ${
                     dueDateSignifiers[0]
                 } ${this.dueDateTime.format(dateFormats[0])}`;
             } else if (!layoutOptions.hideDueTime && this.hasDueTime) {
+                // only date is hidden and task has time -> append time only
                 taskString += ` ${
                     dueDateSignifiers[0]
                 } ${this.dueDateTime.format(timeFormat)}`;
@@ -388,14 +403,17 @@ export class Task {
                 !layoutOptions.hideDoneTime &&
                 this.hasDoneTime
             ) {
+                // nothing is hidden, task has time -> append date and time
                 taskString += ` ${
                     doneDateSignifiers[0]
                 } ${this.doneDateTime.format(dateTimeFormats[0])}`;
             } else if (!layoutOptions.hideDoneDate) {
+                // either time is hidden or no time present -> append date only
                 taskString += ` ${
                     doneDateSignifiers[0]
                 } ${this.doneDateTime.format(dateFormats[0])}`;
             } else if (!layoutOptions.hideDoneTime && this.hasDoneTime) {
+                // only date is hidden and task has time -> append time only
                 taskString += ` ${
                     doneDateSignifiers[0]
                 } ${this.doneDateTime.format(timeFormat)}`;
